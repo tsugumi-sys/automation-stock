@@ -170,7 +170,7 @@ def make_dataset(symbols, start, end=dt.datetime.now()):
         print(count)
 
     df = pd.DataFrame(results, columns=['SMA', 'RSI', 'LABEL'])
-    df.to_csv('./dataset_sandp4.csv')
+    df.to_csv('./dataset_sandp5.csv')
     return print('Successfully made data.')
 df = pd.read_csv('../../symbols/sAndp500.csv')
 symbols = df['symbol'][150:200]
