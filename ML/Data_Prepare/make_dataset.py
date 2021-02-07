@@ -143,6 +143,7 @@ def make_dataset(symbols, start, end=dt.datetime.now()):
     for symbol in symbols:
         try:
             df = yf.download(symbol, start='2016-01-01', end=dt.datetime.now(), interval='1d')
+            print(len(df))
 
             sma_signals = SMA(df)
             rsi_signals = RSI(df)
@@ -170,9 +171,9 @@ def make_dataset(symbols, start, end=dt.datetime.now()):
         print(count)
 
     df = pd.DataFrame(results, columns=['SMA', 'RSI', 'LABEL'])
-    df.to_csv('./dataset_sandp5.csv')
+    df.to_csv('./dataset_sandp11.csv')
     return print('Successfully made data.')
 df = pd.read_csv('../../symbols/sAndp500.csv')
-symbols = df['symbol'][150:200]
+symbols = df['symbol'][450:500]
 start = '2018-01-01'
 make_dataset(symbols=symbols, start=start)

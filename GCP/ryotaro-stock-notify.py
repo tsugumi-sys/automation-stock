@@ -8,14 +8,14 @@ def send_line_notify(notification_message):
     """
     LINEに通知する
     """
-    line_notify_token = '**Your Access Key***'
+    line_notify_token = 'UzQC6Oh3W3rALdiXFnkEkFf14cxG3lLFNLhkYE22Vlm'
     line_notify_api = 'https://notify-api.line.me/api/notify'
     headers = {'Authorization': f'Bearer {line_notify_token}'}
     data = {'message': f'message: {notification_message}'}
     requests.post(line_notify_api, headers = headers, data = data)
 
     
-def RSI(stock_code, term=14, start=dt.datetime.now()-dt.timedelta(days=100), end=dt.datetime.now()):
+def RSI(stock_code, term=14, start=dt.datetime.now()-dt.timedelta(days=160), end=dt.datetime.now()):
     # load data
     df = yf.download(stock_code, start, end, interval='1d')
     # calculate stock price difference between yesterday and today.
@@ -40,6 +40,7 @@ def RSI(stock_code, term=14, start=dt.datetime.now()-dt.timedelta(days=100), end
             return positive_ave/(negative_ave+positive_ave) * 100
 
     df['RSI'] = df['Change'].rolling(window=14).apply(rsi)
+    df['Highest80'] = df['Adj Close'].rolling(window=80).max()
 
     # calculate trend
     term = 3
@@ -52,26 +53,31 @@ def RSI(stock_code, term=14, start=dt.datetime.now()-dt.timedelta(days=100), end
     sma_short = df['SMA25'][-1]
     sma_long = df['SMA50'][-1]
     sma_trend = df['SMA25 Trend'][-1]
-    if rsi > 50 and close > sma_long or sma_trend > 0:
+    highest = df['Highest80'][-2]
+    if rsi > 50 and close > sma_long and close > highest*0.95 and close < highest and sma_trend > 0:
         buy_price = close
-        content = "\n\n{} 👍 Buy at the price ${}".format(stock_code, round(close, 5))
+        content = "\n\n{} 👍 \nBuy Price Tommorow: ${}\nPrevious Close Price: ${}".format(stock_code, round(highest, 5), round(close, 5))
     elif close < sma_long:
         sell_price = close
-        content = "\n\n{} 👎 Sell at the price ${}".format(stock_code, round(close, 5))
+        content = "\n\n{} 👎 Sell".format(stock_code)
     else:
-        content = "\n\n{} is neutral".format(stock_code)
+        content = 'unko'
         
     return content
 
 def main():
-    content = '\n\nToday`s stock report!!! @' + str(dt.date.today())
-    symbols = ['AMD', 'TEAM', 'CHTR', 'NVDA', 'TSLA', 'APH', 'AJG', 'DXC', 'CE', 'LOW', 'TGT', 'TYL']
+    content = '\n\nToday`s stock report!!!' + str(dt.date.today())
+    symbols = ['6976.T', '6036.T', '6758.T', '6966.T', '6544.T', '2980.T', '7190.T', '3768.T']
     for symbol in symbols:
         try:
             report = RSI(symbol)
-            content += '\n'+report
+            if not report == 'unko':
+                content += '\n'+report
+            else:
+                continue
         except:
-            content += '\n\n\n 💀 FAIL to Download {} data.'.format(symbol)
+            content += '\n\n 💀 FAIL to Download {} data.'.format(symbol)
             continue
     send_line_notify(content)
     return 'Mission Completed!!'
+main()
