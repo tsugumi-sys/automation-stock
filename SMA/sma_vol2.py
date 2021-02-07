@@ -20,9 +20,10 @@ def SMA(stock_code, start='2016-01-01', end=dt.datetime.now()):
     df.head()
 
     # calculation SMA
-    short_sma = 20
-    long_sma = 50
-    SMAs = [short_sma, long_sma]
+    short_sma = 50
+    mid_sma = 200
+    long_sma = 300
+    SMAs = [short_sma, mid_sma, long_sma]
     for i in SMAs:
         df["SMA_"+str(i)] = df.iloc[:,4].rolling(window=i).mean()
     df.tail(3)
@@ -33,24 +34,40 @@ def SMA(stock_code, start='2016-01-01', end=dt.datetime.now()):
     counter = 0
     percentChange = []
     for i in df.index:
-        SMA_short = df['SMA_20']
-        SMA_long = df['SMA_50']
+        SMA_short = df['SMA_'+str(short_sma)][i]
+        SMA_middle = df['SMA_'+str(mid_sma)][i]
+        SMA_long = df['SMA_'+str(long_sma)][i]
         close = df['Adj Close'][i]
-
-        if (SMA_short[i] > SMA_long[i]):
-            if (position == 0):
-                buy_price = close
-                position = 1
-        elif (SMA_short[i] < SMA_long[i]):
-            if (position == 1):
+        open_price = df['Open'][i]
+        if np.isnan(SMA_long):
+            continue
+        else:
+            if (SMA_short > SMA_middle and SMA_short > SMA_long and SMA_middle > SMA_long):
+                if (position == 0):
+                    buy_price = close
+                    position = 1
+            elif (SMA_short < SMA_long):
+                if (position == 1):
+                    position = 0
+                    sell_price = close
+                    percent = (sell_price / buy_price - 1) * 100
+                    percentChange.append(percent)
+            # loss cut when open price < buy_price * 0.94
+            elif position == 1 and buy_price * 0.94 > open_price:
                 position = 0
-                sell_price = close
-                percent = (sell_price / buy_price - 1) * 100
+                percent = (open_price / buy_price - 1) * 100
                 percentChange.append(percent)
-        if (counter == df['Adj Close'].count() - 1 and position == 1):
+            # loss cut
+            elif position == 1 and (1 - close / buy_price) * 100 > 6:
                 position = 0
-                sell_price = close
-                percent = (sell_price / buy_price - 1) * 100
+                sell_price = buy_price * 0.94
+                percent = (sell_price/buy_price - 1) * 100
+                percentChange.append(percent)
+            if (i == df.index[-1] and position == 1):
+                    position = 0
+                    sell_price = close
+                    percent = (sell_price / buy_price - 1) * 100
+                    percentChange.append(percent)
 
         counter += 1
 
@@ -69,22 +86,19 @@ def SMA(stock_code, start='2016-01-01', end=dt.datetime.now()):
             numLosses += 1
         total_return = total_return * ((i / 100) + 1)
 
-    total_return = round((total_return - 1)*100, 2)
-    print('This statistics is from {} up to {} with {} trades:'.format(df.index[0], df.index[-1], numGains+numLosses))
-    print('SMAS used: {}'.format(SMAs))
-    print('Total return over {} trades: {}%'.format(numGains+numLosses, total_return))
+    total_return = (total_return - 1)*100
 
     if (numGains > 0):
         average_gain = gains / numGains
-        max_return = str(max(percentChange))
+        max_return = max(percentChange)
     else:
         average_gain = 0
         max_return = 0
 
     if (numLosses > 0):
         average_loss = losses / numLosses
-        max_loss = str(min(percentChange))
-        risk_reward_ratio = - average_gain / average_loss)
+        max_loss = min(percentChange)
+        risk_reward_ratio = - average_gain / average_loss
     else:
         average_loss = 0
         max_loss = 0
@@ -95,45 +109,18 @@ def SMA(stock_code, start='2016-01-01', end=dt.datetime.now()):
     else:
         batting_ave = 0
 
-    print('Average Gain: {}'.format(average_gain))
-    print('Average Loss: {}'.format(average_loss))
-    print('Max Return: {}'.format(max_return))
-    print('Max Loss: {}'.format(max_loss))
-    print('Gain/Loss ratio: {}'.format(risk_reward_ratio))
-    print('Batting Average: {}'.format(batting_ave))
     trades = numGains + numLosses
     
     return [trades, total_return, average_gain, average_loss, max_return, max_loss, risk_reward_ratio, batting_ave]
     
 # init values
-stock_codes = pd.read_csv('../../symbols/sAndp500')
+results = []
+stock_codes = pd.read_csv('../symbols/sandp500.csv')
 for stock_code in stock_codes['symbol']:
     items = SMA(stock_code=stock_code)
     results.append(items)
 
 columns = ['trades', 'Total return', 'Average Gain', 'Average Loss', 'Max Return', 'Max Loss', 'Gain/Loss Ratio', 'Batting Average']
 df = pd.DataFrame(results, columns=columns, index=stock_codes)
-df.to_csv('./result.csv')
-
-# check data
-# columns = ['trades', 'Total return', 'Average Gain', 'Average Loss', 'Max Return', 'Max Loss', 'Gain/Loss Ratio', 'Batting Average']
-import numpy as np
-import pandas as pd
-
-df = pd.read_csv('result.csv')
-trades_ave = df['trades'].mean()
-total_return_ave = df['Total return'].mean()
-average_gain_ave = df['Average Gain'].mean()
-average_loss_ave = df['Average Loss'].mean()
-average_max_return = df['Max Return'].mean()
-average_max_loss = df['Max Loss'].mean()
-average_risk_reward_ratio = df['Gain/Loss Ratio'].mean()
-average_batting_ratio = df['Batting Average'].mean()
-print('trade average: {}'.format(trades_ave))
-print('total return average: {}'.format(total_return_ave))
-print('gain average: {}'.format(average_gain_ave))
-print('loss average: {}'.format(average_loss_ave))
-print('max return average: {}'.format(average_max_return))
-print('max loss average: {}'.format(average_max_loss))
-print('Gain/Loss ratio average: {}'.format(average_risk_reward_ratio))
-print('Batting ratio average: {}'.format(average_batting_ratio))
+df.to_csv('./results/sandp500-50-100.csv')
+print('Completed')
