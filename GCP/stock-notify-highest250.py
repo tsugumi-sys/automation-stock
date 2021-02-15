@@ -18,16 +18,9 @@ def HIGH(stock_code, start=dt.datetime.now()-dt.timedelta(days=400), end=dt.date
     df = yf.download(stock_code, start, end, interval='1d')
     # high in the past 250 days
     df['Highest250'] = df['Adj Close'].rolling(window=250).max()
-    df['volatility'] = df['Adj Close'].rolling(window=120).std()
-    df['change rate'] = df['volatility'].rolling(window=60).apply(lambda x: (x[-1]/x[0] - 1))
-    df['SMA50'] = df['Close'].rolling(window=50).mean()
-    df['SMA25'] = df['Close'].rolling(window=25).mean()
     
     highest = df['Highest250'][-2]
     close = df['Adj Close'][-1]
-    vola_rate = df['change rate'][-1]
-    sma_50 = df['SMA50'][-1]
-    sma_25 = df['SMA25'][-1]
     
     if close < highest and close > highest * 0.95:
         content = "\n\n{} 👍 \nBuy Price Tommorow: ${}\nPrevious Close Price: ${}".format(stock_code, round(highest, 5), round(close, 5))
