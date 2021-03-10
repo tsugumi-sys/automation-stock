@@ -10,7 +10,7 @@ def create_model():
         layers.Dropout(0.3),
         layers.BatchNormalization(),
         layers.Dense(1024, activation='relu'),
-        layers.Dense(0.3),
+        layers.Dropout(0.3),
         layers.BatchNormalization(),
         layers.Dense(1024, activation='relu'),
         layers.Dropout(0.3),
