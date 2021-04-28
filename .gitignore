@@ -1,4 +1,7 @@
 *.ipynb
 .ipynb_checkpoints
 *.png
+*.csv
+*.text
+*.h5
 /ML/Data/
