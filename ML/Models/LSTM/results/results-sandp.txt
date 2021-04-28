@@ -1,0 +1,97 @@
+### S&P500
+
+# LSTM model1
+# trade average: 34.93069306930693
+# total return average: 37.481374305417866
+# gain average: 4.185296749707858
+# loss average: -3.1893373722689717
+# max return average: 15.659735689518707
+# max loss average: -8.756525159179658
+# Gain/Loss ratio average: 1.3432366929348196
+# Batting ratio average: 0.5612006459632112
+# Average Gain and Profit: 0.949
+# Average holding periods: 6.751702
+
+# LSTM model6
+# trade average: 17.80990099009901
+# total return average: 46.767635689289975
+# gain average: 7.662673950732092
+# loss average: -4.515604247848688
+# max return average: 24.93794692102408
+# max loss average: -8.699000102935491
+# Gain/Loss ratio average: 1.7449601282755622
+# Batting ratio average: 0.5854424550050569
+# Average Gain and Profit: 2.614
+# Average holding periods: 18.344393
+
+# LSTM model7
+# trade average: 31.658730158730158
+# total return average: 48.32549956241665
+# gain average: 4.910219877484156
+# loss average: -3.472133003581496
+# max return average: 18.305898084371535
+# max loss average: -9.138717545573245
+# Gain/Loss ratio average: 1.4247531307535293
+# Batting ratio average: 0.575247779269426
+# Average Gain and Profit: 1.35
+# Average holding periods: 8.672744
+
+# LSTM model8
+# trade average: 37.54365079365079
+# total return average: 46.223180148258685
+# gain average: 4.193352094892779
+# loss average: -3.2660978670402403
+# max return average: 15.680230979666332
+# max loss average: -9.174919717004752
+# Gain/Loss ratio average: 1.3095166590056648
+# Batting ratio average: 0.5801822021277189
+# Average Gain and Profit: 1.062
+# Average holding periods: 6.969077
+
+# LSTM model9
+# trade average: 39.61309523809524
+# total return average: 42.74957879647637
+# gain average: 4.067065634089044
+# loss average: -3.1654796905134464
+# max return average: 16.607199404820104
+# max loss average: -9.123761719099244
+# Gain/Loss ratio average: 1.2958157202056675
+# Batting ratio average: 0.5728564109353138
+# Average Gain and Profit: 0.978
+# Average holding periods: 6.695774
+
+# LSTM model10
+# trade average: 46.58134920634921
+# total return average: 43.99496044337841
+# gain average: 3.583753124607422
+# loss average: -2.8297222053706825
+# max return average: 14.83699526053912
+# max loss average: -8.991925773240201
+# Gain/Loss ratio average: 1.270098536725846
+# Batting ratio average: 0.5720617855012975
+# Average Gain and Profit: 0.839
+# Average holding periods: 5.112392
+
+# LSTM model11
+# trade average: 35.15109343936382
+# total return average: 34.59472964502667
+# gain average: 3.457530495196674
+# loss average: -2.4902403753518985
+# max return average: 14.193579729252818
+# max loss average: -7.706295636077011
+# Gain/Loss ratio average: 1.4633954471132153
+# Batting ratio average: 0.5718801258765025
+# Average Gain and Profit: 0.911
+# Average holding periods: 5.18669
+
+# LSTM model12
+# trade average: 38.711729622266404
+# total return average: 37.7366156491814
+# gain average: 3.302570050369751
+# loss average: -2.426674937541777
+# max return average: 14.144772382943648
+# max loss average: -7.7991568610705935
+# Gain/Loss ratio average: 1.4173122972458383
+# Batting ratio average: 0.5779516005914008
+# Average Gain and Profit: 0.885
+# Average holding periods: 4.873913

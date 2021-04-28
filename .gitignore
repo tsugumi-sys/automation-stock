@@ -3,5 +3,6 @@
 *.png
 *.csv
 *.text
+*.txt
 *.h5
 /ML/Data/

@@ -1,0 +1,97 @@
+### NASDAQ100
+
+# LSTM model 1
+# trade average: 34.952
+# total return average: 35.09
+# gain average: 4.136
+# loss average: -3.278
+# max return average: 16.357
+# max loss average: -9.069
+# Gain/Loss ratio average: 1.3
+# Batting ratio average: 0.56
+# Average Gain and Profit: 0.874
+# Average holding periods: 6.695361
+
+# LSTM model6
+# trade average: 19.771
+# total return average: 45.349
+# gain average: 7.263
+# loss average: -4.241
+# max return average: 26.219
+# max loss average: -8.878
+# Gain/Loss ratio average: 1.798
+# Batting ratio average: 0.571
+# Average Gain and Profit: 2.329
+# Average holding periods: 16.780653
+
+# LSTM model7
+# trade average: 33.257
+# total return average: 39.473
+# gain average: 4.39
+# loss average: -3.323
+# max return average: 16.45
+# max loss average: -9.307
+# Gain/Loss ratio average: 1.361
+# Batting ratio average: 0.569
+# Average Gain and Profit: 1.063
+# Average holding periods: 8.016171
+
+# LSTM model8
+# trade average: 38.067
+# total return average: 43.486
+# gain average: 4.084
+# loss average: -3.18
+# max return average: 15.868
+# max loss average: -8.951
+# Gain/Loss ratio average: 1.313
+# Batting ratio average: 0.578
+# Average Gain and Profit: 1.019
+# Average holding periods: 6.921347
+
+# LSTM model9
+# trade average: 39.619
+# total return average: 43.313
+# gain average: 4.125
+# loss average: -3.212
+# max return average: 16.312
+# max loss average: -9.111
+# Gain/Loss ratio average: 1.305
+# Batting ratio average: 0.565
+# Average Gain and Profit: 0.931
+# Average holding periods: 6.660095
+
+# LSTM model 10
+# trade average: 47.162
+# total return average: 44.224
+# gain average: 3.499
+# loss average: -2.872
+# max return average: 14.857
+# max loss average: -9.037
+# Gain/Loss ratio average: 1.237
+# Batting ratio average: 0.58
+# Average Gain and Profit: 0.82
+# Average holding periods: 5.002241
+
+# LSTM model11
+# trade average: 35.077
+# total return average: 30.366
+# gain average: 3.403
+# loss average: -2.584
+# max return average: 13.645
+# max loss average: -8.158
+# Gain/Loss ratio average: 1.39
+# Batting ratio average: 0.564
+# Average Gain and Profit: 0.79
+# Average holding periods: 5.21183
+
+# LSTM model12
+# trade average: 38.048
+# total return average: 32.678
+# gain average: 3.411
+# loss average: -2.544
+# max return average: 13.463
+# max loss average: -8.034
+# Gain/Loss ratio average: 1.376
+# Batting ratio average: 0.559
+# Average Gain and Profit: 0.785
+# Average holding periods: 4.983133

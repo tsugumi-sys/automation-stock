@@ -1,0 +1,5 @@
+train1:
+    scale with the whole data
+
+train2:
+    scale with the only 30 lemgth of the data
