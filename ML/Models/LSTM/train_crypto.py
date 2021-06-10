@@ -17,6 +17,14 @@ def One_One_Scale(df):
     df_scaled = 2 * (df - df.min()) / (df.max() - df.min()) - 1
     return df_scaled
 
+def Custom_Scale(df, min_val=-0.1, max_val=0.1):
+    df = np.where(df > 0.1, 0.1, df)
+    df = np.where(df < -0.1, -0.1, df)
+    if df.max() > 0.1 or df.min() < -0.1:
+        print(df.max(), df.min())
+    df_scaled = 2 * ((df - min_val) / (max_val - min_val)) - 1
+    return df_scaled
+
 one_one_cols = ["return", "volume-change", "amount-change", "sma7-FP", "sma7", "sma25-FP", "sma25", "roc-FP",
  "rsi-FP", "slow-k-FP", "slow-d-FP", "price-change", "price-change-percentage"]
 
@@ -36,11 +44,15 @@ def load_data(symbol):
     for i in list(range(15, max_iter * 5, 5)):
         dataset = data.copy()[count:i]
         for col in one_one_cols:
-            dataset[col] = One_One_Scale(dataset[col])
+            if col == 'return':
+                dataset[col] = Custom_Scale(dataset[col])
+            else:
+                dataset[col] = One_One_Scale(dataset[col])
         # for col in zero_one_cols:
         #     dataset[col] = Zero_One_Scale(dataset[col])
         df = df.append(dataset[cols], ignore_index=True)
         count += 5
+    print(df['return'].max(), df['return'].min())
     return df.drop('Time', axis=1)
 
 def create_train_data():
@@ -58,6 +70,7 @@ def create_train_data():
 
     X = df.copy()
     y = X.pop('return')
+    print(y.max(), y.min())
     
     X = np.reshape(X.values, (len(X)//15 , 15, n_features))
     y = np.reshape(y.values, (len(y)//15, 15))
@@ -98,7 +111,7 @@ def train_model(model, X_train, X_valid, y_train, y_valid):
         verbose=1
     )
 
-    path = './models/model16/'
+    path = './models/model_crypto1/'
 
     if not os.path.exists(path):
         os.mkdir(path)

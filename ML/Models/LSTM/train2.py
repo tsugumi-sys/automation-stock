@@ -17,6 +17,14 @@ def One_One_Scale(df):
     df_scaled = 2 * (df - df.min()) / (df.max() - df.min()) - 1
     return df_scaled
 
+def Custom_Scale(df, min_val=-0.1, max_val=0.1):
+    df = np.where(df > max_val, max_val, df)
+    df = np.where(df < min_val, min_val, df)
+    if df.max() > max_val or df.min() < min_val:
+        print(df.max(), df.min())
+    df_scaled = 2 * ((df - min_val) / (max_val - min_val)) - 1
+    return df_scaled
+
 one_one_cols = ["return", "volume-change", "amount-change", "sma7-FP", "sma7", "sma25-FP", "sma25", "roc-FP",
  "rsi-FP", "slow-k-FP", "slow-d-FP", "price-change", "price-change-percentage"]
 
@@ -36,9 +44,11 @@ def load_data(symbol):
     for i in list(range(30, max_iter * 5, 5)):
         dataset = data.copy()[count:i]
         for col in one_one_cols:
-            dataset[col] = One_One_Scale(dataset[col])
-        # for col in zero_one_cols:
-        #     dataset[col] = Zero_One_Scale(dataset[col])
+            if col == 'return':
+                dataset[col] = Custom_Scale(dataset[col])
+            else:
+                dataset[col] = One_One_Scale(dataset[col])
+        
         df = df.append(dataset[cols], ignore_index=True)
         count += 5
     return df.drop('Date', axis=1)
@@ -104,7 +114,7 @@ def train_model(model, X_train, X_valid, y_train, y_valid):
         verbose=1
     )
 
-    path = './models/model14/'
+    path = './models/model18/'
 
     if not os.path.exists(path):
         os.mkdir(path)

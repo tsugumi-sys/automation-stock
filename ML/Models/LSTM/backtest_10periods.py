@@ -6,6 +6,7 @@ import tensorflow as tf
 from tensorflow.keras.models import load_model
 import requests
 import traceback
+import json
 
 def Zero_One_Scale(df):
     df_scaled = (df - df.min()) / (df.max() - df.min())
@@ -47,10 +48,9 @@ n_features = len(one_one_cols) - 1
 def make_prediction(df, model):
     df = df.copy()
     before_len = len(df)
-    df['return'] = np.log(df['Adj Close'].shift(10) / df['Adj Close'])
+    df['return'] = np.log(df['Adj Close'].shift(-10) / df['Adj Close'])
     df['direction'] = np.where(df['return'] > 0, 1, -1)
     df['direction'] = df['direction'].shift(-1)
-    df['return'] = df['return'].shift(-1)
     # feature calculation
     # basic information
     df['price-change'] = df['Adj Close'] - df['Adj Close'].shift(1)
@@ -154,7 +154,7 @@ def evaluate_model(data, save_path=None):
     pred = make_prediction(data, model)
     data['pred'] = pred
 
-    data['return'] = data['Adj Close'].shift(10) / data['Adj Close']
+    data['return'] = data['Adj Close'].shift(-10) / data['Adj Close']
     if save_path:
         result_df = data[['return', 'pred']]
         result_df.to_csv(save_path)
@@ -170,7 +170,7 @@ def evaluate_model(data, save_path=None):
         close = data['Adj Close'][i]
         ml_signal = data['pred'][i]
 
-        if position == 0 and ml_signal > 0.7:
+        if position == 0 and ml_signal > 0:
             position = 1
             buy_price = close
             buy_day = i
@@ -282,92 +282,100 @@ def send_line_notify(notification_message):
     requests.post(line_notify_api, headers = headers, data = data)
 
 try:
-    model_num = 14
+    model_num = 18
     model = load_model(f'./models/model{model_num}/model.h5')
 
     model_num = str(model_num)
     # raktuen us stock
-    symbols = pd.read_csv('../../../symbols/rakuten-usstock.csv')
+    # symbols = pd.read_csv('../../../symbols/rakuten-usstock.csv')
+    # results = []
+    # fails = []
+    # for symbol in symbols['symbol']:
+    #     try:
+    #         data = yf.download(symbol, start='2020-05-01', end=dt.datetime.now(), interval='1d')
+    #         item = evaluate_model(data)
+    #         print(f'---- Rakuten US Stock {symbol} ----')
+    #         show_results(item)
+    #         print('-'*30)
+    #         results.append(item)
+    #     except:
+    #         results.append([np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
+    #         fails.append(symbol)
+    #         continue
+    # columns = ['trades', 'Total return', 'Average Gain', 'Average Loss', 'Max Return', 'Max Loss', 'Gain/Loss Ratio', 'Batting Average', "Average Period"]
+    # df = pd.DataFrame(results, columns=columns, index=symbols['symbol'])
+    # df.to_csv(f'./results/model{model_num}-rakutenusstock.csv')
+    # fails_df = pd.DataFrame({'symbol': fails})
+    # fails_df.to_csv('./rakuten-fails.csv')
+    
+    # nikkei 255
+    symbols = pd.read_csv('../../../symbols/nikkei255.csv')
     results = []
-    fails = []
+    root_path = './detail_result/ten_periods_model17/'
+    for symbol in symbols['symbol']:
+        data = yf.download(symbol, start='2020-01-01', end='2020-12-31', interval='1d')
+        # Evaluate model
+        sym = symbol.replace('.T', '')
+        save_path = root_path + f'{sym}.csv'
+        item = evaluate_model(data, save_path)
+
+        # show result
+        print('--- Nikkei255 {} ---'.format(symbol))
+        show_results(item)
+        print('-'*30)
+        results.append(item)
+
+    columns = ['trades', 'Total return', 'Average Gain', 'Average Loss', 'Max Return', 'Max Loss', 'Gain/Loss Ratio', 'Batting Average', "Average Period"]
+    df = pd.DataFrame(results, columns=columns, index=symbols['symbol'])
+    df.to_csv(f'./results/model{model_num}-07-nikkei255.csv')
+
+    #nasdaq100
+    symbols = pd.read_csv('../../../symbols/nasdaq100.csv')
+    results = []
+    root_path = './detail_result/ten_periods/'
+    for symbol in symbols['symbol']:
+        data = yf.download(symbol, start='2020-01-01', end='2020-12-31', interval='1d')
+
+        # Evaluate model
+        save_path = root_path + f'{symbol}.csv'
+        item = evaluate_model(data, save_path)
+
+        # Show result
+        print('--- NASDAQ100 {} ---'.format(symbol))
+        show_results(item)
+        print('-'*30)
+        results.append(item)
+    columns = ['trades', 'Total return', 'Average Gain', 'Average Loss', 'Max Return', 'Max Loss', 'Gain/Loss Ratio', 'Batting Average', "Average Period"]
+    df = pd.DataFrame(results, columns=columns, index=symbols['symbol'])
+    df.to_csv(f'./results/model{model_num}-07-nasdaq100.csv')
+
+    #s and p 500
+    symbols = pd.read_csv('../../../symbols/sandp500.csv')
+    root_path = './detail_result/ten_periods_model17/'
+    results = []
     for symbol in symbols['symbol']:
         try:
-            data = yf.download(symbol, start='2020-05-01', end=dt.datetime.now(), interval='1d')
-            item = evaluate_model(data)
-            print(f'---- Rakuten US Stock {symbol} ----')
+            data = yf.download(symbol, start='2020-01-01', end='2020-12-31', interval='1d')
+
+            # Evaluate model
+            save_path = root_path + f'{symbol}.csv'
+            item = evaluate_model(data, save_path)
+            
+            # Show result
+            print('--- S&P500 {} ---'.format(symbol))
             show_results(item)
             print('-'*30)
             results.append(item)
-        except:
-            results.append([np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
-            fails.append(symbol)
+        except json.decoder.JSONDecodeError:
+            print('JsonDecodeError')
             continue
+        except:
+            print('Some Error')
+            continue
+
     columns = ['trades', 'Total return', 'Average Gain', 'Average Loss', 'Max Return', 'Max Loss', 'Gain/Loss Ratio', 'Batting Average', "Average Period"]
     df = pd.DataFrame(results, columns=columns, index=symbols['symbol'])
-    df.to_csv(f'./results/model{model_num}-rakutenusstock.csv')
-    fails_df = pd.DataFrame({'symbol': fails})
-    fails_df.to_csv('./rakuten-fails.csv')
-    
-    # nikkei 255
-    # symbols = pd.read_csv('../../../symbols/nikkei255.csv')
-    # results = []
-    # root_path = './detail_result/ten_periods/'
-    # for symbol in symbols['symbol']:
-    #     data = yf.download(symbol, start='2020-01-01', end='2020-12-31', interval='1d')
-    #     # Evaluate model
-    #     sym = symbol.replace('.T', '')
-    #     save_path = root_path + f'{sym}.csv'
-    #     item = evaluate_model(data, save_path)
-
-    #     # show result
-    #     print('--- Nikkei255 {} ---'.format(symbol))
-    #     show_results(item)
-    #     print('-'*30)
-    #     results.append(item)
-
-    # columns = ['trades', 'Total return', 'Average Gain', 'Average Loss', 'Max Return', 'Max Loss', 'Gain/Loss Ratio', 'Batting Average', "Average Period"]
-    # df = pd.DataFrame(results, columns=columns, index=symbols['symbol'])
-    # df.to_csv(f'./results/model{model_num}-07-nikkei255.csv')
-
-    # #nasdaq100
-    # symbols = pd.read_csv('../../../symbols/nasdaq100.csv')
-    # results = []
-    # root_path = './detail_result/ten_periods/'
-    # for symbol in symbols['symbol']:
-    #     data = yf.download(symbol, start='2020-01-01', end='2020-12-31', interval='1d')
-
-    #     # Evaluate model
-    #     save_path = root_path + f'{symbol}.csv'
-    #     item = evaluate_model(data, save_path)
-
-    #     # Show result
-    #     print('--- NASDAQ100 {} ---'.format(symbol))
-    #     show_results(item)
-    #     print('-'*30)
-    #     results.append(item)
-    # columns = ['trades', 'Total return', 'Average Gain', 'Average Loss', 'Max Return', 'Max Loss', 'Gain/Loss Ratio', 'Batting Average', "Average Period"]
-    # df = pd.DataFrame(results, columns=columns, index=symbols['symbol'])
-    # df.to_csv(f'./results/model{model_num}-07-nasdaq100.csv')
-
-    # #s and p 500
-    # symbols = pd.read_csv('../../../symbols/sandp500.csv')
-    
-    # results = []
-    # for symbol in symbols['symbol']:
-    #     data = yf.download(symbol, start='2020-01-01', end='2020-12-31', interval='1d')
-
-    #     # Evaluate model
-    #     save_path = root_path + f'{symbol}.csv'
-    #     item = evaluate_model(data, save_path)
-        
-    #     # Show result
-    #     print('--- S&P500 {} ---'.format(symbol))
-    #     show_results(item)
-    #     print('-'*30)
-    #     results.append(item)
-    # columns = ['trades', 'Total return', 'Average Gain', 'Average Loss', 'Max Return', 'Max Loss', 'Gain/Loss Ratio', 'Batting Average', "Average Period"]
-    # df = pd.DataFrame(results, columns=columns, index=symbols['symbol'])
-    # df.to_csv(f'./results/model{model_num}-07-sandp500.csv')
+    df.to_csv(f'./results/model{model_num}-07-sandp500.csv')
 
     send_line_notify('Successfully Completed!!')
 
