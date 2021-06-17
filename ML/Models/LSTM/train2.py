@@ -17,7 +17,7 @@ def One_One_Scale(df):
     df_scaled = 2 * (df - df.min()) / (df.max() - df.min()) - 1
     return df_scaled
 
-def Custom_Scale(df, min_val=-0.1, max_val=0.1):
+def Custom_Scale(df, min_val=-0.2, max_val=0.2):
     df = np.where(df > max_val, max_val, df)
     df = np.where(df < min_val, min_val, df)
     if df.max() > max_val or df.min() < min_val:
@@ -35,12 +35,12 @@ cols = ["return", "volume-change", "amount-change", "sma7-FP", "sma7", "sma25-FP
 
 n_features = len(one_one_cols) - 1
 
-def load_data(symbol):
-    path = '../../Data/LSTM_Seven/{}'.format(symbol)
+def load_data(path):
     data = pd.read_csv(path)
     df = pd.DataFrame()
     max_iter = len(data) // 5
     count = 0
+    print('Return Max, Min: ', data['return'].max(), data['return'].min())
     for i in list(range(30, max_iter * 5, 5)):
         dataset = data.copy()[count:i]
         for col in one_one_cols:
@@ -51,10 +51,13 @@ def load_data(symbol):
         
         df = df.append(dataset[cols], ignore_index=True)
         count += 5
+    print('Scaled Return Max, Min: ', df['return'].max(), df['return'].min())
+    print('-' * 80)
     return df.drop('Date', axis=1)
 
 def create_train_data():
     #files = os.listdir('../../Data/LSTM_Six')
+    data_folder = '../../Data/LSTM_8/'
     symbols = pd.read_csv('../../../symbols/sandp500.csv')
     file_names = [str(x) + '.csv' for x in symbols['symbol']]
 
@@ -63,7 +66,8 @@ def create_train_data():
     df = pd.DataFrame()
     for file in files:
         try:
-            data = load_data(file)
+            path = data_folder + file
+            data = load_data(path)
             print('{} has {} data.'.format(file, len(data)))
             df = df.append(data)
         except:
@@ -114,7 +118,7 @@ def train_model(model, X_train, X_valid, y_train, y_valid):
         verbose=1
     )
 
-    path = './models/model18/'
+    path = './models/model19/'
 
     if not os.path.exists(path):
         os.mkdir(path)

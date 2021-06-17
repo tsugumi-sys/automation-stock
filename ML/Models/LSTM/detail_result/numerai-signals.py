@@ -1,22 +1,16 @@
-import seaborn as sns
-import matplotlib.pyplot as plt
+import yfinance as yf
 import pandas as pd
 import numpy as np
-import yfinance as yf
 import datetime as dt
-import os
-import requests
-
-def Zero_One_Scale(df):
-    df_scaled = (df - df.min()) / (df.max() - df.min())
-    return df_scaled
+import tensorflow as tf
+from tensorflow.keras.models import load_model
+import requests as re
+import numerapi
 
 def One_One_Scale(df):
     df_scaled = 2 * (df - df.min()) / (df.max() - df.min()) - 1
     return df_scaled
 
-def Normalize(df):
-    df_normalized = (df - df.mean(axis=0)) / df.std(axis=0)
 
 def RSI(x):
     up, down = [i for i in x if i > 0], [i for i in x if i <= 0]
@@ -35,14 +29,14 @@ def SlowK(x):
     k = (x[-1] - min_price) / (max_price - min_price)
     return k
 
-def create_data(symbol):
-    # Loading data
-    df = yf.download(symbol, start='2016-01-01', end='2019-12-31', interval='1d')
-    # set return and direction (label)
-    df['return'] = (df['Adj Close'].shift(-10) / df['Adj Close']) - 1
+
+def make_prediction(df, model):
+    df = df.copy()
+    before_len = len(df)
+    df['return'] = np.log(df['Adj Close'].shift(10) / df['Adj Close'])
     df['direction'] = np.where(df['return'] > 0, 1, -1)
     df['direction'] = df['direction'].shift(-1)
-    #df['return'] = One_One_Scale(df['return'])
+    df['return'] = df['return'].shift(-1)
     # feature calculation
     # basic information
     df['price-change'] = df['Adj Close'] - df['Adj Close'].shift(1)
@@ -51,20 +45,16 @@ def create_data(symbol):
     volume_mid = df['Volume'].median()
     df['Volume'] = df['Volume'].apply(lambda x: volume_mid if x == 0 else x)
     df['volume-change'] = np.log(df['Volume'] / df['Volume'].shift(1))
-    #df['volume-change'] = One_One_Scale(df['volume-change'])
     # amount
     df['amount'] = df['Adj Close'] * df['Volume']
     df['amount-change'] = np.log(df['amount'] / df['amount'].shift(1))
-    #df['amount-change'] = One_One_Scale(df['amount-change'])
     # simple moving average
     df['sma7'] = df['Adj Close'].rolling(7).mean()
     df['sma7-FP'] = (df['sma7'] - df['sma7'].shift(1)) / df['sma7'].shift(1)
-    #df['sma7-FP'] = One_One_Scale(df['sma7-FP'])
-    df['sma7'] = np.log(df['sma7']/df['sma7'].shift(1))
+    df['sma7'] = np.log(df['sma7'] / df["sma7"].shift(1))
     
     df['sma25'] = df['Adj Close'].rolling(25).mean()
     df['sma25-FP'] = (df['sma25'] - df['sma25'].shift(1)) / df['sma25'].shift(1)
-    #df['sma25-FP'] = One_One_Scale(df['sma25-FP'])
     df['sma25'] = np.log(df['sma25']/df['sma25'].shift(1))
     
     # simple moving average difference
@@ -92,38 +82,28 @@ def create_data(symbol):
     df['roc'] = (df['Adj Close'] - df['Adj Close'].shift(10)) / df['Adj Close'].shift(10)
     df['roc-SG'] = np.where(df['roc'] > 0, 1, -1)
     df['roc-FP'] = (df['roc'] - df['roc'].shift(1))
-    #df['roc-FP'] = One_One_Scale(df['roc-FP'])
     # Relative Strength Index in 5 days
     df['rsi'] = df['price-change'].rolling(5).apply(RSI) / 100
     df['rsi-FP'] = (df['rsi'] - df['rsi'].shift(1))
-    #df['rsi-FP'] = One_One_Scale(df['rsi-FP'])
     # Slow K and Slow D
     df['slow-k'] = df['Adj Close'].rolling(14).apply(SlowK)
     df['slow-d'] = df['slow-k'].rolling(14).mean()
     df['slow-k-FP'] = df['slow-k'] - df['slow-k'].shift(1)
     df['slow-d-FP'] = df['slow-d'] - df['slow-d'].shift(1)
-    #df['slow-k'] = Zero_One_Scale(df['slow-k'])
-    #df['slow-d'] = Zero_One_Scale(df['slow-d'])
-    #df['slow-k-FP'] = One_One_Scale(df['slow-k-FP'])
-    #df['slow-d-FP'] = One_One_Scale(df['slow-d-FP'])
     # ADOSC
     df['adosc'] = ((2 * df['Close'] - df['High'] - df['Low']) / (df['High'] - df['Low'])) * df['Volume']
     df['adosc'] = df['adosc'].cumsum()
     df['adosc-ema3'] = df['adosc'].ewm(span=3, adjust=False).mean()
     df['adosc-ema10'] = df['adosc'].ewm(span=10, adjust=False).mean()
     df['adosc-SG'] = np.where((df['adosc-ema3'] - df['adosc-ema10']) > 0, 1, -1)
-    #df['adosc'] = Zero_One_Scale(df['adosc'])
     # AR 26
     hp_op = (df['High'] - df['Open']).rolling(26).sum()
     op_lp = (df['Open'] - df['Low']).rolling(26).sum()
     df['ar26'] = hp_op / op_lp
-    #df['ar26'] = Zero_One_Scale(df['ar26'])
     # BR 26
     hp_cp = (df['High'] - df['Close']).rolling(26).sum()
     cp_lp = (df['Close'] - df['Low']).rolling(26).sum()
     df['br26'] = hp_cp / cp_lp
-    #df['br26'] = Zero_One_Scale(df['br26'])
-    # VR 26
     
     # BIAS 20
     sma20 = df['Adj Close'].rolling(20).mean()
@@ -131,64 +111,71 @@ def create_data(symbol):
     df['bias20'] = np.where(df['bias20'] > 0, 1, -1)
     
     
-    
-    #df['price-change'] = One_One_Scale(df['price-change'])
-    #df['price-change-percentage'] = One_One_Scale(df['price-change-percentage'])
     # drop row contains NaN
     df.dropna(inplace=True)
+    after_len = len(df)
     
-    # adjust the length of the data, which should be a multiple number of 30.
-    length = len(df) // 5
     
-    return df[:5 * length]
+    cols = ["volume-change", "amount-change", "sma7-FP", "sma7", "sma25-FP", "sma25", "roc-FP",
+ "rsi-FP", "slow-k-FP", "slow-d-FP", "price-change", "price-change-percentage"]
+
+    # Make dataset
+    X = df.copy()[cols]
+    
+    # make prediction
+    count = 0
+    result = [np.nan for i in range(30 + (before_len - after_len))]
+    for i in range(30,len(df)):
+        data = X.copy()[count:i]
+        for col in cols:
+            data[col] = One_One_Scale(data[col])
+        data = np.reshape(data.values, (1, 30, len(cols)))
+        y = model.predict(data)
+        result.append(y[0][-1])
+        count += 1
+    
+    return result
 
 
-def save_csv(df, sym, save_path):
-    sym = sym.replace('.T', '')
-    df.to_csv(save_path+'{}.csv'.format(sym))
-    print('{}.csv Saved'.format(sym))
+def lstm():
+    model = load_model('../models/model18/model.h5')
+    pred_df = pd.DataFrame()
+    failed_symbol = []
+    
+    # Load Tickers
+    napi = numerapi.SignalsAPI()
+    eligible_tickers = pd.Series(napi.ticker_universe(), name='numerai_ticker')
+    ticker_map = pd.read_csv('https://numerai-signals-public-data.s3-us-west-2.amazonaws.com/signals_ticker_map_w_bbg.csv')
+    yfinance_tickers = eligible_tickers.map(
+        dict(zip(ticker_map['bloomberg_ticker'], ticker_map['yahoo']))
+    ).dropna()
+    numerai_tickers = ticker_map['bloomberg_ticker']
+    yfinance_tickers_csv = yfinance_tickers.apply(lambda x: x.replace('.', ''))
+    
+    for i in yfinance_tickers.index:
+        symbol = yfinance_tickers[i]
+        if '.TWO' in symbol:
+            symbol = symbol.replace('.TWO', '.T')
+        elif '.TW' in symbol:
+            symbol = symbol.replace('.TW', '.T')
+        symbol_for_csv = yfinance_tickers_csv[i]
+        symbol_numerai = numerai_tickers[i]
+        print('-'*50, symbol, '-'*50)
+        try:
+            df = yf.download(symbol, start=dt.datetime.now() - dt.timedelta(days=140), end=dt.datetime.now(), interval='1d')
+            preds = make_prediction(df, model)
+            pred = preds[-1] if len(preds) > 0 else None
+            if pred:
+                print(round(pred, 5))
+                pred_df.loc[symbol, 'signal'] = round(pred, 5)
+                pred_df.loc[symbol, 'bloomberg_ticker'] = symbol_numerai
+        except:
+            print('Failed ', symbol)
+            failed_symbol.append(symbol)
+            continue
 
-cols = ['return', 'price-change', 'price-change-percentage', 'volume-change', 'amount-change', 'sma7', 'sma7-FP', 'sma25', 'sma25-FP', 'smaDiff7-25',
-        'macd', 'macd-SG', 'macd-histogram', 'cci-SG', 'mtm10', 'roc-SG', 'roc-FP', 'rsi', 'rsi-FP', 'slow-k', 'slow-d',
-        'slow-k-FP', 'slow-d-FP', 'adosc', 'adosc-SG', 'ar26', 'br26', 'bias20']
-
-
-def send_line_notify(notification_message):
-    """
-    LINEに通知する
-    """
-    line_notify_token = 'HvPqtdmp53Cl6tZyKMIVkMjmBOWOWGyR6W7FG5Np31y'
-    line_notify_api = 'https://notify-api.line.me/api/notify'
-    headers = {'Authorization': f'Bearer {line_notify_token}'}
-    data = {'message': f'message: {notification_message}'}
-    requests.post(line_notify_api, headers = headers, data = data)
-
-try:
-    # save directory path
-    save_path = '../../Data/LSTM_8/'
-
-    # check directory path
-    if not os.path.exists(save_path):
-        os.mkdir(save_path)
-
-    # load Raw Data
-    symbol = pd.read_csv('../../../symbols/sandp500.csv')
-    for symbol in symbol['symbol']:
-        df = create_data(symbol)
-        save_csv(df[cols], symbol, save_path)
-
-    symbol = pd.read_csv('../../../symbols/nikkei255.csv')
-    for symbol in symbol['symbol']:
-        print(symbol)
-        df = create_data(symbol)
-        save_csv(df[cols], symbol, save_path)
-
-    symbol = pd.read_csv('../../../symbols/nasdaq100.csv')
-    for symbol in symbol['symbol']:
-        df = create_data(symbol)
-        save_csv(df[cols], symbol, save_path)
-    send_line_notify('Success!!!!!!!!!!!!!!')
-except:
-    import traceback
-    send_line_notify("Process has Stopped with some error!!!")
-    send_line_notify(traceback.format_exc())
+    pred_df.to_csv('numerai-pred.csv')
+    failed_df = pd.DataFrame({'symbol': failed_symbol})
+    failed_df.to_csv('numerai-fail.csv')
+    
+lstm()

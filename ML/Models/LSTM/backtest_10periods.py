@@ -260,7 +260,7 @@ def evaluate_model(data, save_path=None):
 def save_result(save_path):
     pred = make_prediction(data, model)
     data['pred'] = pred
-    data['return'] = data['Adj Close'] / data['Adj Close'].shift(10)
+    data['return'] = data['Adj Close'].shift(-10) / data['Adj Close']
     result_df = data[['return', 'pred']]
     result_df.to_csv(save_path)
     print(save_path, ' Saved!!!!!!!!!!!!!!!!!!!!!!!!!!!')
@@ -282,9 +282,9 @@ def send_line_notify(notification_message):
     requests.post(line_notify_api, headers = headers, data = data)
 
 try:
-    model_num = 18
+    model_num = 19
     model = load_model(f'./models/model{model_num}/model.h5')
-
+    root_path = './detail_result/ten_periods/model19/'
     model_num = str(model_num)
     # raktuen us stock
     # symbols = pd.read_csv('../../../symbols/rakuten-usstock.csv')
@@ -311,7 +311,7 @@ try:
     # nikkei 255
     symbols = pd.read_csv('../../../symbols/nikkei255.csv')
     results = []
-    root_path = './detail_result/ten_periods_model17/'
+    
     for symbol in symbols['symbol']:
         data = yf.download(symbol, start='2020-01-01', end='2020-12-31', interval='1d')
         # Evaluate model
@@ -332,7 +332,7 @@ try:
     #nasdaq100
     symbols = pd.read_csv('../../../symbols/nasdaq100.csv')
     results = []
-    root_path = './detail_result/ten_periods/'
+    
     for symbol in symbols['symbol']:
         data = yf.download(symbol, start='2020-01-01', end='2020-12-31', interval='1d')
 
@@ -351,7 +351,7 @@ try:
 
     #s and p 500
     symbols = pd.read_csv('../../../symbols/sandp500.csv')
-    root_path = './detail_result/ten_periods_model17/'
+    
     results = []
     for symbol in symbols['symbol']:
         try:

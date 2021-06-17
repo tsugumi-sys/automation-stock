@@ -12,3 +12,12 @@ best for now
 
 model15:
 train with crypto data
+
+model16-17:
+train with crupto
+
+model18:
+stock data. scale log(return) [-0.1, 0.1]
+
+model19:
+stock data return [-0.2, 0.2]
