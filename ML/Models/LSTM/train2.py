@@ -44,10 +44,10 @@ def load_data(path):
     for i in list(range(30, max_iter * 5, 5)):
         dataset = data.copy()[count:i]
         for col in one_one_cols:
-            if col == 'return':
-                dataset[col] = Custom_Scale(dataset[col])
-            else:
-                dataset[col] = One_One_Scale(dataset[col])
+            # if col == 'return':
+            #     dataset[col] = Custom_Scale(dataset[col])
+            # else:
+            dataset[col] = One_One_Scale(dataset[col])
         
         df = df.append(dataset[cols], ignore_index=True)
         count += 5
@@ -118,7 +118,7 @@ def train_model(model, X_train, X_valid, y_train, y_valid):
         verbose=1
     )
 
-    path = './models/model19/'
+    path = './models/model20/'
 
     if not os.path.exists(path):
         os.mkdir(path)

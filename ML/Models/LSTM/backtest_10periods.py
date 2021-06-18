@@ -282,9 +282,9 @@ def send_line_notify(notification_message):
     requests.post(line_notify_api, headers = headers, data = data)
 
 try:
-    model_num = 19
+    model_num = 20
     model = load_model(f'./models/model{model_num}/model.h5')
-    root_path = './detail_result/ten_periods/model19/'
+    root_path = './detail_result/ten_periods/model20/'
     model_num = str(model_num)
     # raktuen us stock
     # symbols = pd.read_csv('../../../symbols/rakuten-usstock.csv')
