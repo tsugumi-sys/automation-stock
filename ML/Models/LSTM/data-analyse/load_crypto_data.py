@@ -3,7 +3,11 @@ import numpy as np
 import datetime as dt
 import requests
 import os
+from dotenv import load_dotenv
+from pathlib import Path
 
+dotenv_path = Path('../.env')
+load_dotenv(dotenv_path=dotenv_path)
 
 def One_One_Scale(df):
     df_scaled = 2 * (df - df.min()) / (df.max() - df.min()) - 1
@@ -139,7 +143,7 @@ def send_line_notify(notification_message):
     """
     LINEに通知する
     """
-    line_notify_token = 'HvPqtdmp53Cl6tZyKMIVkMjmBOWOWGyR6W7FG5Np31y'
+    line_notify_token = os.getenv('LINE_TOKEN')
     line_notify_api = 'https://notify-api.line.me/api/notify'
     headers = {'Authorization': f'Bearer {line_notify_token}'}
     data = {'message': f'message: {notification_message}'}

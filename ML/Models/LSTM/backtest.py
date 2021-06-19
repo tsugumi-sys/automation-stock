@@ -6,6 +6,12 @@ import tensorflow as tf
 from tensorflow.keras.models import load_model
 import requests
 import traceback
+import os
+from dotenv import load_dotenv
+from pathlib import Path
+
+dotenv_path = Path('.env')
+load_dotenv(dotenv_path=dotenv_path)
 
 def Zero_One_Scale(df):
     df_scaled = (df - df.min()) / (df.max() - df.min())
@@ -272,7 +278,7 @@ def send_line_notify(notification_message):
     """
     LINEに通知する
     """
-    line_notify_token = 'HvPqtdmp53Cl6tZyKMIVkMjmBOWOWGyR6W7FG5Np31y'
+    line_notify_token = os.getenv('LINE_TOKEN')
     line_notify_api = 'https://notify-api.line.me/api/notify'
     headers = {'Authorization': f'Bearer {line_notify_token}'}
     data = {'message': f'message: {notification_message}'}

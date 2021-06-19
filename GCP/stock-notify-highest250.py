@@ -8,7 +8,7 @@ def send_line_notify(notification_message):
     """
     LINEに通知する
     """
-    line_notify_token = 'UzQC6Oh3W3rALdiXFnkEkFf14cxG3lLFNLhkYE22Vlm'
+    line_notify_token = 'YOUR_TOKEN'
     line_notify_api = 'https://notify-api.line.me/api/notify'
     headers = {'Authorization': f'Bearer {line_notify_token}'}
     data = {'message': f'message: {notification_message}'}

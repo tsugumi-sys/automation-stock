@@ -1,1 +1,0 @@
-print('Hello Stock auto env')

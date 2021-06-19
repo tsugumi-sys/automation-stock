@@ -5,4 +5,6 @@
 *.text
 *.txt
 *.h5
+.env
 /ML/Data/
+mlruns
