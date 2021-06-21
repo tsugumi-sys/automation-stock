@@ -138,7 +138,7 @@ def make_prediction(df, model):
 
 
 def lstm():
-    model = load_model('../models/model18/model.h5')
+    model = load_model('../models/model14/model.h5')
     pred_df = pd.DataFrame()
     failed_symbol = []
     

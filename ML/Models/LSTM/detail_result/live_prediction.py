@@ -137,7 +137,7 @@ def make_prediction(df, model):
 
 
 def lstm(symbols_path='../2021_rakuten_stock_list.csv'):
-    model = load_model('../models/model18/model.h5')
+    model = load_model('../models/model14/model.h5')
     pred_df = pd.DataFrame()
     failed_symbol = []
     symbols = pd.read_csv(symbols_path)
