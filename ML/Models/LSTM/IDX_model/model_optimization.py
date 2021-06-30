@@ -11,8 +11,10 @@ from sklearn.model_selection import train_test_split
 import mlflow
 from mlflow import pyfunc
 import mlflow.tensorflow
+import optuna
 from dotenv import load_dotenv
 from pathlib import Path
+import traceback
 
 dotenv_path = Path('../.env')
 load_dotenv(dotenv_path=dotenv_path)
@@ -90,44 +92,53 @@ def make_train_data():
     print(y.shape)
     X = np.reshape(X.values, (len(X) // 30, 30, len(X.columns)))
     y = np.reshape(y.values, (len(y) // 30, 30))
-    # y_uni = np.empty([len(X), 1])
-    # for i in range(len(X)):
-    #     y_uni[i][0] = y[i][-1]
+    y_uni = np.empty([len(X), 1])
+    for i in range(len(X)):
+        y_uni[i][0] = y[i][-1]
 
-    print("X shape: ", X.shape, "y shape: ", y.shape)
-    X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.2, random_state=11)
+    print("X shape: ", X.shape, "y shape: ", y_uni.shape)
+    X_train, X_valid, y_train, y_valid = train_test_split(X, y_uni, test_size=0.2, random_state=11)
     return X_train, X_valid, y_train, y_valid, n_features
 
 
-def create_model(params, n_features):
+def create_model(trial, n_features):
     # Parameters
-    units = params['units']
-    adam_learning_rate = params['adam_learning_rate']
-    hidden_activation = params['hidden_activation']
-    output_activation = params['output_activation']
+    units = trial.suggest_categorical("units", [1024, 512, 256, 128])
+    adam_learning_rate = trial.suggest_loguniform("adam_learning_rate", 1e-5, 1e-1)
+    adam_clipnorm = trial.suggest_categorical("adam_clipnorm", [1.0, 0.8, 0.5, 0.2, 0.01])
+    hidden_activation = trial.suggest_categorical("hidden_activation", ['relu', 'elu', 'LeakyReLU'])
+    output_activation = trial.suggest_categorical("output_activation", ["tanh", "linear"])
 
     if hidden_activation == "LeakyReLU":
         model = keras.Sequential([
             layers.LSTM(units, return_sequences=True, input_shape=(30, n_features)),
             layers.LeakyReLU(),
+            layers.BatchNormalization(),
             layers.LSTM(units, return_sequences=True),
             layers.LeakyReLU(),
+            layers.BatchNormalization(),
             layers.LSTM(units),
             layers.LeakyReLU(),
+            layers.BatchNormalization(),
             layers.Dense(64),
+            layers.BatchNormalization(),
             layers.LeakyReLU(),
             layers.Dense(1, activation=output_activation)
         ])
     else:
         model = keras.Sequential([
             layers.LSTM(units, return_sequences=True, input_shape=(30, n_features), activation=hidden_activation),
-            layers.LSTM(514, return_sequences=True, activation=hidden_activation),
-            layers.LSTM(514, activation=hidden_activation),
+            layers.BatchNormalization(),
+            layers.LSTM(units, return_sequences=True, activation=hidden_activation),
+            layers.BatchNormalization(),
+            layers.LSTM(units, activation=hidden_activation),
+            layers.BatchNormalization(),
             layers.Dense(64, activation=hidden_activation),
+            layers.BatchNormalization(),
             layers.Dense(1, activation=output_activation)
         ])
     model.compile(
-        optimizer=keras.optimizers.Adam(learning_rate=adam_learning_rate),
+        optimizer=keras.optimizers.Adam(learning_rate=adam_learning_rate, clipnorm=adam_clipnorm),
         loss='mae',
         metrics=['mae']
     )
@@ -135,21 +146,16 @@ def create_model(params, n_features):
     return model
 
 
-def main():
-    model_name = 'Base_Line'
-    params = {
-        'units': 512,
-        'adam_learning_rate': 0.1,
-        'hidden_activation': 'relu',
-        'output_activation': 'linear'
-    }
+def objective(trial):
+    keras.backend.clear_session()
 
-
-    mlflow.set_experiment("LSTM Stock Prediction - IDX model")
+    mlflow.set_experiment("Optuna BaseLine LSTM Stock Prediction - IDX model")
     mlflow.tensorflow.autolog(every_n_iter=2)
-    with mlflow.start_run(run_name=model_name):
+    with mlflow.start_run():
         X_train, X_valid, y_train, y_valid, n_features = make_train_data()
-        model = create_model(params, n_features)
+        model = create_model(trial, n_features)
+
+        mlflow.log_params(trial.params)
         early_stop = callbacks.EarlyStopping(
             min_delta=0.0001,
             patience=20,
@@ -163,18 +169,9 @@ def main():
             callbacks=[early_stop],
             verbose=1
         )
+        score = model.evaluate(X_valid, y_valid, verbose=0)
 
-    path = f'models/model{model_name}/'
-
-    if not os.path.exists(path):
-        os.mkdir(path)
-    
-    hist = pd.DataFrame(history.history)
-    hist.to_csv(path + 'history.csv')
-    model.save(path + 'model.h5')
-    res = 'Sucessfully Saved'
-    send_line(res)
-    return res
+    return score[1]
 
 def send_line(msg):
     token = os.getenv('LINE_TOKEN')
@@ -186,5 +183,21 @@ def send_line(msg):
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        study = optuna.create_study(direction="maximize")
+        study.optimize(objective, n_trials=100, gc_after_trial=True)
+
+        print("Number of finished trials", len(study.trials))
+        print("Best Trials: ")
+        trial = study.best_trial
+
+        print("Value: ", trial.value)
+        print("Params: ")
+        for key, value in trial.params.items():
+            print("  {}: {}".format(key, value))
+        send_line("Successfully Completed")
+    except:
+        send_line("Process has Stops with some Error")
+        send_line(traceback.format_exc())
+        print(traceback.format_exc())
     
